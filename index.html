@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart Attendance Monitoring System</title>
 
-  <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+  <!-- QR Libraries -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Baloo+2:wght@600;700&display=swap');
@@ -27,17 +28,6 @@
       border-bottom-right-radius: 25px;
     }
 
-    header h1 {
-      font-family: 'Baloo 2', cursive;
-      font-size: 2rem;
-      margin: 0;
-    }
-
-    header p {
-      margin: 5px 0 0;
-      font-size: 0.95rem;
-    }
-
     .container {
       padding: 20px;
       max-width: 900px;
@@ -45,38 +35,31 @@
     }
 
     .card {
-      background: #ffffff;
+      background: #fff;
       padding: 20px;
       border-radius: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
 
     h2 {
       font-family: 'Baloo 2', cursive;
       color: #6d597a;
-      margin-top: 0;
     }
 
-    input {
-      padding: 12px;
-      margin: 8px 0;
+    input, button {
       width: 100%;
+      padding: 12px;
+      margin-top: 10px;
       border-radius: 12px;
       border: 1px solid #ddd;
       font-family: 'Poppins', sans-serif;
     }
 
     button {
-      padding: 12px;
-      margin-top: 10px;
-      width: 100%;
       border-radius: 999px;
       border: none;
-      font-family: 'Baloo 2', cursive;
-      font-size: 1rem;
       background: linear-gradient(135deg, #ffafcc, #bde0fe);
-      color: #3a2c5b;
       cursor: pointer;
     }
 
@@ -99,10 +82,6 @@
       background: #bde0fe;
       font-family: 'Baloo 2', cursive;
     }
-
-    tr:nth-child(even) {
-      background: #f8f9ff;
-    }
   </style>
 </head>
 
@@ -120,7 +99,7 @@
     <h2>Admin Login</h2>
     <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <button id="loginBtn">Login</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -132,7 +111,7 @@
     <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- GENERATE QR -->
+  <!-- GENERATE -->
   <div class="card hidden" id="generate">
     <h2>Generate QR Code</h2>
     <input type="text" id="parentName" placeholder="Parent Name">
@@ -169,16 +148,20 @@
 </div>
 
 <script>
-  const adminUser = 'admin';
-  const adminPass = '1234';
+  const ADMIN_USER = 'admin';
+  const ADMIN_PASS = '1234';
 
   let attendance = JSON.parse(localStorage.getItem('attendance')) || [];
 
-  function login() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginBtn').addEventListener('click', login);
+  });
 
-    if (username === adminUser && password === adminPass) {
+  function login() {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value.trim();
+
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
       document.getElementById('loginCard').classList.add('hidden');
       document.getElementById('dashboard').classList.remove('hidden');
     } else {
@@ -191,9 +174,9 @@
   }
 
   function showSection(id) {
-    ['generate', 'scan', 'records'].forEach(sec => {
-      document.getElementById(sec).classList.add('hidden');
-    });
+    ['generate','scan','records'].forEach(sec =>
+      document.getElementById(sec).classList.add('hidden')
+    );
 
     document.getElementById(id).classList.remove('hidden');
 
@@ -208,31 +191,26 @@
       student: studentName.value,
       section: section.value
     });
-
     new QRCode(document.getElementById('qrcode'), data);
   }
 
   function startScanner() {
-    const html5QrCode = new Html5Qrcode('reader');
-
-    html5QrCode.start(
+    const scanner = new Html5Qrcode('reader');
+    scanner.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: 250 },
-      qrCodeMessage => {
-        const info = JSON.parse(qrCodeMessage);
+      text => {
+        const info = JSON.parse(text);
         const now = new Date();
-
         attendance.push({
           ...info,
           date: now.toLocaleDateString(),
           time: now.toLocaleTimeString()
         });
-
         localStorage.setItem('attendance', JSON.stringify(attendance));
         document.getElementById('scanResult').innerText =
           'Attendance recorded for ' + info.parent;
-
-        html5QrCode.stop();
+        scanner.stop();
       }
     );
   }
@@ -240,7 +218,6 @@
   function loadRecords() {
     const body = document.getElementById('recordsBody');
     body.innerHTML = '';
-
     attendance.forEach(a => {
       body.innerHTML += `
         <tr>
@@ -249,12 +226,10 @@
           <td>${a.section}</td>
           <td>${a.date}</td>
           <td>${a.time}</td>
-        </tr>
-      `;
+        </tr>`;
     });
   }
 </script>
 
 </body>
 </html>
-
